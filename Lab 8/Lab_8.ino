@@ -25,7 +25,7 @@
 #define VALLEY_THRESHOLD  -10  
 #define INFLUENCE         0.1  
 #define EPSILON           0.01 
-#define MAX_DATA_POINTS   200   // Maximum data points to analyze peaks/valleys
+#define MAX_DATA_POINTS   500   // Maximum data points to analyze peaks/valleys
 
 // Initialize TFT display object
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
@@ -37,6 +37,7 @@ int distanceData[MAX_DATA_POINTS];
 int dataIndex = 0;
 
 PeakDetection peakDetect;
+
 
 // Setup function
 void setup() {
@@ -102,48 +103,52 @@ void PeaksAndValleys() {
   dataIndex++;
   
   // Detect peaks and valleys
-  peakDetect.update(distance);  // Update the peak detection algorithm with the new distance
+  peakDetect.add(distance);  // Update the peak detection algorithm with the new distance
   
-  if (peakDetect.isPeak()) {
+  int peak = peakDetect.getPeak();
+  
+  if (peak == 0){
+    tft.setTextColor(ST77XX_RED);
+    tft.fillRect(10, 50, 250, 50, ST77XX_BLACK);
+    tft.setCursor(10, 50);
+    tft.print("No Peak or Valley");
+  }
+
+  if (peak < 0){
+    tft.setTextColor(ST77XX_GREEN);
+    tft.fillRect(10, 50, 250, 50, ST77XX_BLACK);
+    tft.setCursor(10, 50);
+    tft.print("Valley Found: ");
+    tft.print(distance);
+  }
+  
+  
+  if (peak >= 1) {
+    tft.fillRect(10, 50, 250, 50, ST77XX_BLACK);
+    
     Serial.println("Peak detected!");
-
-    tft.fillRect(0, 50, 135, 20, ST77XX_BLACK); // Clear a portion of the screen
-
-    // Set the color for the peak (green arrow)
+ 
+    // Set text color for "Peak detected" and leave the text intact
     tft.setTextColor(ST77XX_GREEN);
     tft.setCursor(10, 50);
-    tft.print("Peak detected: ");
+    tft.println("Peak detected: ");
+
+    tft.fillRect(200, 50, 50, 20, ST77XX_BLACK); // Clears only the number, not the label
+ 
+    // Print the new distance value
+    tft.setCursor(200, 50); // Align with the cleared area
     tft.print(distance);
-    tft.println(" mm");
-
-    // Draw a green upward arrow for the peak
-    tft.drawLine(120, 60, 120, 40, ST77XX_GREEN); // Vertical line (shaft)
-    tft.drawLine(115, 45, 120, 40, ST77XX_GREEN); // Left diagonal (arrowhead)
-    tft.drawLine(125, 45, 120, 40, ST77XX_GREEN); // Right diagonal (arrowhead)
   }
-
-  if (peakDetect.isValley()) {
-    Serial.println("Valley detected!");
-
-    // Clear the area where the arrow will be drawn (optional, to avoid overlapping)
-    tft.fillRect(0, 70, 135, 20, ST77XX_BLACK); // Clear a portion of the screen
-
-    // Set the color for the valley (red arrow)
-    tft.setTextColor(ST77XX_RED);
-    tft.setCursor(10, 70);
-    tft.print("Valley detected: ");
-    tft.print(distance);
-    tft.println(" mm");
-
-    // Draw a red downward arrow for the valley
-    tft.drawLine(120, 80, 120, 100, ST77XX_RED);  // Vertical line (shaft)
-    tft.drawLine(115, 95, 120, 100, ST77XX_RED);  // Left diagonal (arrowhead)
-    tft.drawLine(125, 95, 120, 100, ST77XX_RED);  // Right diagonal (arrowhead)
-  }
-
-  // Print the distance data to TFT
+  
+  // Print the distance data to TFT screen (without clearing the text label)
   tft.setTextColor(ST77XX_WHITE);
   tft.setCursor(10, 20);
   tft.print("Distance: ");
-  tft.println(distance);
+  
+  // Clear only the number area (keeping the "Distance:" text intact)
+  tft.fillRect(180, 20, 50, 20, ST77XX_BLACK);  // Clears only the old number
+  
+  // Print the updated distance value in the cleared area
+  tft.setCursor(180, 20);  // Align with the cleared area
+  tft.print(distance);  
 }
