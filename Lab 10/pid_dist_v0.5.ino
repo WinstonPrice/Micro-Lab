@@ -23,7 +23,7 @@
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789 display
 
 #define RIGHT_BUTTON_PIN   A0
-#define BUZZ_PIN           2
+// #define BUZZ_PIN           2
 #define SERVO_PIN          9
 #define NEO_PIN           17  // WARNING! THIS IS GPIO NOT D NUMBER for NeoPixels
 #define NEO_COUNT         18  // number of NeoPixels
@@ -35,7 +35,7 @@
 #define TFT_CS            4  // display chip select
 #define TFT_RST           A3 // display reset
 #define TFT_DC            3  // display D/C
-#define SD_CS             7
+//#define SD_CS             7
 // To try different scaling factors, change the following define.
 // Valid scaling factors are 1, 2, or 3.
 #define SCALING 3
