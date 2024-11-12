@@ -1,3 +1,6 @@
+// Winston Price 
+// Nicola Rice
+
 #include <Adafruit_NeoPixel.h> // NeoPixel library
 #include <Arduino_LSM6DSOX.h>  // Include IMU library
 #include <Adafruit_ST7789.h>   // Hardware-specific library for ST7789 display
@@ -27,9 +30,9 @@ PCA9535 muxU31;
 enum States {pid, halt};
 States state = halt;
 
-float KP = 3.0;  // proportional gain
+float KP = 13;  // proportional control gain
 float KI = 0.01; // integral gain
-float KD = 10.0; // derivative gain
+float KD = 3;    // derivative gain
 
 float targetAngle = 0.0; // Target angle to maintain level
 float currentAngle = 0.0;
@@ -122,7 +125,7 @@ void readIMUAngle() {
   if (IMU.accelerationAvailable()) {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
-    currentAngle = RAD_TO_DEG * atan2(ax, az); // Angle based on front-to-back tilt
+    currentAngle = RAD_TO_DEG * atan2(ay, az); // Angle based on front-to-back tilt
   }
 }
 
@@ -142,8 +145,9 @@ float pidControl(float error) {
 
 // Function to update motor speed based on PID control output
 void updateMotorSpeed(float error) {
-  int absSpeed = min(abs(motorSpeed), 255); // Ensure speed does not exceed 255
+  int absSpeed = abs(motorSpeed);
   if (motorSpeed > 0) {
+
     analogWrite(AIN1, absSpeed);
     analogWrite(AIN2, 0);
     analogWrite(BIN1, 0);
@@ -158,6 +162,7 @@ void updateMotorSpeed(float error) {
 
 // Function to display the system's current status on the TFT screen
 void displayStatus(float error) {
+
   tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(2);
