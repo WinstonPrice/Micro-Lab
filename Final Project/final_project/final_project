@@ -1,0 +1,97 @@
+/*
+ * Calculates the angle based on both gyroscope data around the 
+ * Y axis and gx and gz accelerometer data and maps the results
+ * to motor control.
+ * 
+ * Seth McNeill 
+ * 2022 October 12
+*/
+
+#include <Arduino_LSM6DSOX.h>
+
+#define AIN1 0
+#define AIN2 1
+#define BIN1 8
+#define BIN2 A2
+
+float front_back_angle = 0;
+float left_right_angle = 0;
+
+float front_back_acceleration = 0;
+float left_right_acceleration = 0;
+
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);
+
+  // Initialize IMU
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
+
+  // Initialize motor driver pins
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(BIN1, OUTPUT);
+  pinMode(BIN2, OUTPUT);
+}
+
+void loop() {
+  readIMUAngle();
+  angle_to_acceleration();
+  acceleration_to_motor();
+}
+
+void readIMUAngle() {
+  if (IMU.accelerationAvailable()) {
+    float ax, ay, az;
+    IMU.readAcceleration(ax, ay, az);
+
+    // Calculate angles in degrees
+    front_back_angle = RAD_TO_DEG * atan2(ay, az);
+    left_right_angle = RAD_TO_DEG * atan2(ax, az);
+  }
+}
+
+void angle_to_acceleration() {
+  // Convert angles into pseudo-acceleration (proportional to tilt)
+  front_back_acceleration = front_back_angle / 90.0 * 9.81;  // Scale to range of ±9.81
+  left_right_acceleration = left_right_angle / 90.0 * 9.81;  // Scale to range of ±9.81
+
+  Serial.print("Front-back acceleration: " );
+  Serial.println(front_back_acceleration);
+
+  Serial.print("Left-right acceleration: " );
+  Serial.println(left_right_acceleration);
+  
+}
+
+void acceleration_to_motor() {
+  // Map accelerations to motor speeds
+  int motorSpeed_1 = map(front_back_acceleration, -9.81, 9.81, -255, 255);
+  int motorSpeed_2 = map(front_back_acceleration, -9.81, 9.81, 255, -255);  // Reverse direction
+  int motorSpeed_3 = map(left_right_acceleration, -9.81, 9.81, -255, 255);
+  int motorSpeed_4 = map(left_right_acceleration, -9.81, 9.81, 255, -255);  // Reverse direction
+
+  // Clamp speeds to PWM limits
+  motorSpeed_1 = constrain(motorSpeed_1, -255, 255);
+  motorSpeed_2 = constrain(motorSpeed_2, -255, 255);
+  motorSpeed_3 = constrain(motorSpeed_3, -255, 255);
+  motorSpeed_4 = constrain(motorSpeed_4, -255, 255);
+
+  // Drive motors
+  driveMotor(AIN1, motorSpeed_1);
+  driveMotor(AIN2, motorSpeed_2);
+  driveMotor(BIN1, motorSpeed_3);
+  driveMotor(BIN2, motorSpeed_4);
+
+}
+
+void driveMotor(int motorPin, int speed) {
+  if (speed >= 0) {
+    analogWrite(motorPin, speed);  // Forward direction
+  } else {
+    analogWrite(motorPin, -speed); // Reverse direction
+  }
+}
